@@ -1,0 +1,51 @@
+services:
+  redis:
+    image: redis
+    restart: always
+    # ports:      #port redundant
+    #   - 6379:6379
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    container_name: postgres
+    ports:
+      - 5432:5432
+
+  proj:
+    restart: always
+    build:
+      context: ./proj
+    command:
+      - python3
+      - ./bot.py
+    depends_on:
+      - postgres
+    links: 
+      - postgres
+  worker:
+    restart: always
+    build:
+      context: ./proj
+    command:
+      - celery
+      - '-A'
+      - tasks
+      - worker
+      - '--loglevel=INFO'
+    links:
+      - redis
+  dbstart:
+    build:
+      context: ./proj
+    command: 
+      - python3
+      - ./db.py
+    links:
+      - postgres
+    depends_on:
+      - postgres
+
+    
